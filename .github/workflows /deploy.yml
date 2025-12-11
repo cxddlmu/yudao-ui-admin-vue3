@@ -3,6 +3,18 @@ on:
   push:
     branches:
       - master
+  workflow_dispatch:    # 核心：开启手动触发（无参数版）
+    # 可选：添加自定义参数（比如部署不同环境）
+    inputs:
+      environment:
+        description: '部署环境（prod/test）'
+        required: true
+        default: 'prod'
+        type: choice
+        options:
+          - prod
+          - test
+
 jobs:
   build:
 
