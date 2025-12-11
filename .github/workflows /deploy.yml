@@ -1,0 +1,44 @@
+name: Build app and deploy to aliyun
+on:
+  push:
+    branches:
+      - master
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18.0.0'
+
+    - name: Install npm dependencies
+      run: npm install -legacy-peer-deps
+
+    - name: Run build task
+      run: npm run build
+
+    - name: Deploy to Server
+      uses: easingthemes/ssh-deploy@v5.1.1
+      with:
+          SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          ARGS: '-rlgoDzvc --delete'
+          SOURCE: 'dist Dockerfile docker.sh nginx.conf'
+          REMOTE_HOST: ${{ secrets.ECS_HOST }}
+          REMOTE_USER: ${{ secrets.ECS_USERNAME }}
+          TARGET: ${{ secrets.SERVER_TARGET }}
+          SCRIPT_BEFORE: ls
+
+    - name: Run Docker Commands on Server
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+          host: ${{ secrets.ECS_HOST }}
+          username: ${{ secrets.ECS_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            cd ${{ secrets.SERVER_TARGET }}
+            sh docker.sh
